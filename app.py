@@ -3,8 +3,7 @@ import pandas as pd
 import plotly.graph_objects as go
 import json
 
-
-st.set_page_config(page_title="Acidentes", page_icon="🗿")
+st.set_page_config(page_title="Acidentes", page_icon="🗿", layout='wide')
 st.title("Teste Acidentes")
 
 @st.cache_data
@@ -38,22 +37,34 @@ with colGrav:
         'Escolha a(s) gravidade(s)',
         list(df['gravidade'].unique())
     )
+    logras = st.multiselect('Escolha um Logradouro',df['logradouro'].unique())
+
 
 with colTipo:
     selected_tipo = st.multiselect(
         'Escolha o(s) tipo(s) de acidente',
         list(df['tipo_acidente'].unique())
     )
+    nums = st.multiselect('Escolha um número',df['numero'].unique())
+
 with colTempo:
     selected_tempo = st.multiselect(
         'Escolha o(s) tempo(s)',
         list(df['tempo'].unique())
     )
+    cruz = st.multiselect('Escolha um Cruzamento',df['cruzamento'].unique())
+
 
 if selected_gravidade or selected_tipo or selected_tempo:
     df = df[(df['gravidade'].isin(selected_gravidade)) 
             | (df['tipo_acidente'].isin(selected_tipo)) 
             | (df['tempo'].isin(selected_tempo))]
+else:
+    df = df
+if logras or nums or cruz:
+    df = df[(df['logradouro'].isin(logras)) 
+            | (df['numero'].isin(nums)) 
+            | (df['cruzamento'].isin(cruz))]
 else:
     df = df
 
@@ -64,6 +75,7 @@ gravidade_colors = {
     'S/ LESÃO': 'blue'
 }
 
+config = {'displayModeBar': True}
 fig = go.Figure()
 
 gravidades = df['gravidade'].unique()
@@ -82,35 +94,45 @@ for gravidade in gravidades:
     ))
 
 fig.update_layout(
-    title='Acidentes por gravidade',
     mapbox=dict(
         style="carto-darkmatter",
         center=dict(lat=df.lat.mean(), lon=df.lon.mean()),
         zoom=12
     ),
+    height=450,
+    margin=dict(l=0, r=0, t=0, b=0),
+    legend=dict(
+        x=0.0,  # Position from the left
+        y=0.925,  # Position from the bottom
+        xanchor='left',  # Anchor point for x position
+        yanchor='middle',  # Anchor point for y position
+        font=dict(size=14),  # Font size of the legend text
+        orientation='v'  # Vertical orientation of legend items
+    ),
     showlegend=True
 )
+colMap, colDF = st.columns(2)
 
-selected_points = st.plotly_chart(fig, use_container_width=True,
-                on_select='rerun',
-                selection_mode=['box','lasso'])
-
-# try:
-#     selected_points = json.loads(selected_points)
-# except json.JSONDecodeError:
-#     selected_points = []
+with colMap:
+    st.write('Acidentes por gravidade')
+    selected_points = st.plotly_chart(fig, use_container_width=True,
+                    on_select='rerun',
+                    selection_mode=['box','lasso'])
 
 if selected_points:
-    # Extract coordinates from selected points
     selected_coords = [(p['lon'], p['lat']) for p in selected_points.get('selection', {}).get('points', [])]
     
     if selected_coords:
-        # Ensure DataFrame columns match the coordinates
         df_filtered = df[df[['lon', 'lat']].apply(tuple, axis=1).isin(selected_coords)]
     else:
-        df_filtered = pd.DataFrame()  # No coordinates selected
+        df_filtered = pd.DataFrame() 
 else:
-    df_filtered = pd.DataFrame()  # No points selected
+    df_filtered = df
 
-st.write("Dados:")
-st.dataframe(df_filtered, hide_index=True)
+with colDF:
+    st.write("Dados")
+    st.dataframe(df_filtered, hide_index=True,
+                    column_order=['data_hora','dia_semana','logradouro','numero',
+                                'cruzamento','tipo_acidente','gravidade','tempo'])
+
+    #st.write(df.columns)
