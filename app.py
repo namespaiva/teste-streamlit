@@ -1,15 +1,11 @@
-import altair as alt
-import pandas as pd
 import streamlit as st
-import numpy as np
+import pandas as pd
+import plotly.graph_objects as go
+import json
 
-# Show the page title and description.
+
 st.set_page_config(page_title="Acidentes", page_icon="🗿")
 st.title("Teste Acidentes")
-st.write(
-    """
-    """
-)
 
 @st.cache_data
 def load_data():
@@ -35,16 +31,86 @@ ano = st.slider(
 
 df = df[df['data_hora'].dt.year.isin(ano)]
 
-option = st.multiselect(
-    'Escolha um filtro',
-     list(df['gravidade'].unique())
-     )
+colGrav, colTipo, colTempo = st.columns(3)
 
-if option:
-    filter_df = df[df['gravidade'].isin(option)]
+with colGrav:
+    selected_gravidade = st.multiselect(
+        'Escolha a(s) gravidade(s)',
+        list(df['gravidade'].unique())
+    )
+
+with colTipo:
+    selected_tipo = st.multiselect(
+        'Escolha o(s) tipo(s) de acidente',
+        list(df['tipo_acidente'].unique())
+    )
+with colTempo:
+    selected_tempo = st.multiselect(
+        'Escolha o(s) tempo(s)',
+        list(df['tempo'].unique())
+    )
+
+if selected_gravidade or selected_tipo or selected_tempo:
+    df = df[(df['gravidade'].isin(selected_gravidade)) 
+            | (df['tipo_acidente'].isin(selected_tipo)) 
+            | (df['tempo'].isin(selected_tempo))]
 else:
-    filter_df = df
+    df = df
 
-st.map(filter_df)
+gravidade_colors = {
+    'C/ VÍTIMAS LEVES': 'green',
+    'C/ VÍTIMAS GRAVES': 'orange',
+    'C/ VÍTIMAS FATAIS': 'red',
+    'S/ LESÃO': 'blue'
+}
 
-st.dataframe(filter_df, hide_index=True)
+fig = go.Figure()
+
+gravidades = df['gravidade'].unique()
+for gravidade in gravidades:
+    df_gravidades = df[df['gravidade'] == gravidade]
+    fig.add_trace(go.Scattermapbox(
+        lat=df_gravidades.lat,
+        lon=df_gravidades.lon,
+        mode='markers',
+        marker=dict(
+            size=8,
+            opacity=0.7,
+            color=gravidade_colors.get(gravidade, 'gray')
+        ),
+        name=f'{gravidade}'
+    ))
+
+fig.update_layout(
+    title='Acidentes por gravidade',
+    mapbox=dict(
+        style="carto-darkmatter",
+        center=dict(lat=df.lat.mean(), lon=df.lon.mean()),
+        zoom=12
+    ),
+    showlegend=True
+)
+
+selected_points = st.plotly_chart(fig, use_container_width=True,
+                on_select='rerun',
+                selection_mode=['box','lasso'])
+
+# try:
+#     selected_points = json.loads(selected_points)
+# except json.JSONDecodeError:
+#     selected_points = []
+
+if selected_points:
+    # Extract coordinates from selected points
+    selected_coords = [(p['lon'], p['lat']) for p in selected_points.get('selection', {}).get('points', [])]
+    
+    if selected_coords:
+        # Ensure DataFrame columns match the coordinates
+        df_filtered = df[df[['lon', 'lat']].apply(tuple, axis=1).isin(selected_coords)]
+    else:
+        df_filtered = pd.DataFrame()  # No coordinates selected
+else:
+    df_filtered = pd.DataFrame()  # No points selected
+
+st.write("Dados:")
+st.dataframe(df_filtered, hide_index=True)
