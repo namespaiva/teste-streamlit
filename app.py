@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
-import json
 
 st.set_page_config(page_title="Acidentes", page_icon="🚗", layout='wide')
 st.title("Dados de Acidentes")
@@ -20,9 +19,7 @@ with st.expander("Sobre"):
 
              Os dias da semana estão representados em números, de 1, domingo até 7, sábado.
              
-             Planos posteriores: adicionar alguns gráficos interativos e um mapa de calor.   
-
-             - CPMU
+             Planos posteriores: adicionar alguns gráficos interativos e um mapa de calor.
              ''')
 
 @st.cache_data
@@ -66,6 +63,7 @@ anos = st.slider(
 filters.append((anos, 'data_hora_year'))
 df = apply_filters(df, filters)
 
+# Filtros
 with st.container():
     st.header('Filtros')
     
@@ -126,7 +124,6 @@ with st.container():
 
     df = apply_filters(df, filters)
 
-
 gravidade_colors = {
     'C/ VÍTIMAS LEVES': 'green',
     'C/ VÍTIMAS GRAVES': 'orange',
@@ -134,6 +131,7 @@ gravidade_colors = {
     'S/ LESÃO': 'blue'
 }
 
+# Criar o Plotly
 config = {'displayModeBar': True}
 fig = go.Figure()
 
@@ -141,7 +139,6 @@ gravidades = df['gravidade'].unique()
 for gravidade in gravidades:
     df_gravidades = df[df['gravidade'] == gravidade]
     
-    # Create hovertext with desired information
     hover_text = df_gravidades.apply(
         lambda row: f"Logradouro: {row['logradouro']}<br>Número: {row['numero']}<br>Cruzamento: {row['cruzamento']}",
         axis=1
@@ -157,8 +154,8 @@ for gravidade in gravidades:
             color=gravidade_colors.get(gravidade, 'gray')
         ),
         name=f'{gravidade}',
-        hovertext=hover_text,  # Set hovertext for the trace
-        hoverinfo='text'  # Ensure hovertext is displayed
+        hovertext=hover_text, 
+        hoverinfo='text' 
     ))
 
 fig.update_layout(
@@ -170,18 +167,19 @@ fig.update_layout(
     height=450,
     margin=dict(l=0, r=0, t=0, b=0),
     legend=dict(
-        x=0.0,  # Position from the left
-        y=0.925,  # Position from the bottom
-        xanchor='left',  # Anchor point for x position
-        yanchor='middle',  # Anchor point for y position
-        font=dict(size=14),  # Font size of the legend text
-        orientation='v'  # Vertical orientation of legend items
+        x=0.0,
+        y=0.925,
+        xanchor='left', 
+        yanchor='middle',
+        font=dict(size=14),
+        orientation='v' 
     ),
     showlegend=True
 )
 
 tabMap, tabGraphs = st.tabs(['Mapa', 'Gráficos'])
 
+# Visualização
 with tabMap:
     colMap, colDF = st.columns(2)
     with colMap:
