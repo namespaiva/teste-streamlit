@@ -1,19 +1,17 @@
-# 🎬 Movies dataset template
+# Dados de acidentes em Santos de 2015 a 2024. 
 
-A simple Streamlit app showing movie data from [The Movie Database (TMDB)](https://www.kaggle.com/datasets/tmdb/tmdb-movie-metadata). 
+A partir de 2017 a quantidade de dados 
+anuais cai drasticamente, por isso o ano inicial padrão é 2017. 
 
-[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://movies-dataset-template.streamlit.app/)
+Muitos acidentes aconteceram no mesmo endereço/cruzamento, por isso os pontos ficam 
+sobrepostos no mapa. Recomendo usar (clicar) a legenda do próprio gráfico para ocultar 
+alguns pontos e ver quais estão acima de quais.
 
-### How to run it on your own machine
+Os filtros já estão razoavelmente dinâmicos, mas alguns acabam limpando as seleções 
+anteriores.
 
-1. Install the requirements
+Os dias da semana estão representados em números, de 1, domingo até 7, sábado.
 
-   ```
-   $ pip install -r requirements.txt
-   ```
+Planos posteriores: adicionar alguns gráficos interativos e um mapa de calor.   
 
-2. Run the app
-
-   ```
-   $ streamlit run streamlit_app.py
-   ```
+Cortesia do CPMU
