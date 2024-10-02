@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import plotly.express as px
 import plotly.graph_objects as go
 import pydeck as pdk
 
@@ -26,8 +27,8 @@ def apply_filters(df, filters):
     for filter_value, column in filters:
         if filter_value: 
             if column == 'data_hora_year':
-                # Especificamente para a coluna de data (pois é tipo datetime)
-                df = df[df['data_hora'].dt.year.isin(filter_value)]
+                start, finish = filter_value
+                df = df[(df['data_hora'].dt.year >= start) & (df['data_hora'].dt.year <= finish)]
             elif isinstance(filter_value, list):  # Para mais de um valor (multiselect)
                 df = df[df[column].isin(filter_value)]
             else:  # Para só um valor (multiselect)
@@ -108,8 +109,6 @@ with st.container():
     filters.append((selected_cruz, 'cruzamento'))
     df = apply_filters(df, filters)
 
-    df = apply_filters(df, filters)
-
 gravidade_colors = {
     'C/ VÍTIMAS LEVES': 'green',
     'C/ VÍTIMAS GRAVES': 'orange',
@@ -117,7 +116,6 @@ gravidade_colors = {
     'S/ LESÃO': 'blue'
 }
 
-# Criar o Plotly
 config = {'displayModeBar': True}
 fig = go.Figure()
 
@@ -155,7 +153,7 @@ fig.update_layout(
     legend=dict(
         x=0.0,
         y=0.925,
-        xanchor='left', 
+        xanchor='left',
         yanchor='middle',
         font=dict(size=14),
         orientation='v' 
@@ -163,10 +161,10 @@ fig.update_layout(
     showlegend=True
 )
 
-tabMap, tabGraphs = st.tabs(['Mapa', 'Gráficos'])
+tabScatter, tabHeat, tabGraphs = st.tabs(['Mapa de Pontos', 'Mapa de Calor','Gráficos'])
 
 # Visualização
-with tabMap:
+with tabScatter:
     colMap, colDF = st.columns(2)
     with colMap:
         st.write('Mapa de Acidentes por Gravidade')
@@ -189,35 +187,77 @@ with tabMap:
         st.dataframe(df_filtered, hide_index=True,
                         column_order=['data_hora','dia_semana','logradouro','numero',
                                     'cruzamento','tipo_acidente','gravidade','tempo'])
+        if df_filtered.empty:
+            st.write('Contagem: ', df.shape[0])
+        else:
+            st.write('Contagem: ', df_filtered.shape[0])
 
-        #st.write(df.columns)
+with tabHeat:
+    linha = st.columns([2,1])
+    with linha[0]:
+        chart = st.pydeck_chart(
+            pdk.Deck(
+                map_style=None,
+                initial_view_state=pdk.ViewState(
+                    latitude=-23.959,
+                    longitude=-46.342,
+                    zoom=11,
+                    pitch=50
+                ),
+                layers=[
+                    pdk.Layer(
+                        "HexagonLayer",
+                        data=df,
+                        get_position="[lon, lat]",
+                        radius=70,
+                        elevation_scale=2,
+                        auto_highlight=True,
+                        elevation_range=[0, 1000],
+                        upperPercentile=99,
+                        # lowerPercentile=1,
+                        pickable=True,
+                        extruded=True,
+                        material=True
+                    )
+                ],
+            )
+        )
+    with linha[1]:
+        st.write("Dados")
+        st.dataframe(df, hide_index=True,
+                        column_order=['data_hora','dia_semana','logradouro','numero',
+                                    'cruzamento','tipo_acidente','gravidade','tempo'])
+        st.write('Contagem: ', df.shape[0])
+
 
 with tabGraphs:
+    colLogs, colCruz = st.columns(2)
 
-    st.pydeck_chart(
-        pdk.Deck(
-            map_style=None,
-            initial_view_state=pdk.ViewState(
-                latitude=-23.959,
-                longitude=-46.342,
-                zoom=11,
-                pitch=50,
-            ),
-            layers=[
-                pdk.Layer(
-                    "HexagonLayer",
-                    data=df,
-                    get_position="[lon, lat]",
-                    radius=100,
-                    elevation_scale=2,
-                    elevation_range=[0, 1000],
-                    upperPercentile=99,
-                    pickable=True,
-                    extruded=True,
-                    material=True
-                )
-            ],
-        )
+    dflogs = df['logradouro'].value_counts().head(10).reset_index()
+    dflogs.columns = ['Logradouro', 'Contagem']
+    dflogs = dflogs.sort_values(by='Contagem', ascending=False)
+
+    fig = px.bar(dflogs, x='Contagem', y='Logradouro', orientation='h',
+            title="Top 10 Logradouros com Mais Acidentes")
+
+    fig.update_layout(xaxis_tickangle=-20) 
+    st.plotly_chart(fig)
+
+    df_crossings = df.dropna(subset=['cruzamento'])
+
+    df_crossings['logradouro_cruzamento'] = df_crossings['logradouro'] + ' x ' + df_crossings['cruzamento']
+
+    df_top_crossings = df_crossings['logradouro_cruzamento'].value_counts().head(10).reset_index()
+    df_top_crossings.columns = ['logradouro_cruzamento', 'contagem']
+
+    fig = px.bar(df_top_crossings, x='contagem', y='logradouro_cruzamento', 
+                orientation='h',
+                title="Top 10 Cruzamentos com Mais Acidentes")
+
+    fig.update_layout(
+        xaxis_title="Contagem de Acidentes",
+        yaxis_title="Cruzamento",
+        yaxis_tickfont=dict(size=10) 
     )
 
-    st.header("Nada por aqui ainda. 🚧") 
+    st.plotly_chart(fig)
