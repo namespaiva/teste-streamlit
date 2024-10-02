@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
+import pydeck as pdk
 
 st.set_page_config(page_title="Acidentes", page_icon="🚗", layout='wide',initial_sidebar_state="collapsed")
 st.title("Dados de Acidentes")
@@ -41,7 +42,7 @@ anos = st.slider(
     "Escolha um Período",
     df['data_hora'].dt.year.min(),
     df['data_hora'].dt.year.max(),
-    (2017,2024) 
+    (2018,2024) 
     )
 filters.append((anos, 'data_hora_year'))
 df = apply_filters(df, filters)
@@ -80,7 +81,6 @@ with st.container():
         )
         filters.append((selected_tempo, 'tempo'))
         df = apply_filters(df, filters)
-
 
     linha2 = st.columns([2,1,2])
 
@@ -193,4 +193,31 @@ with tabMap:
         #st.write(df.columns)
 
 with tabGraphs:
+
+    st.pydeck_chart(
+        pdk.Deck(
+            map_style=None,
+            initial_view_state=pdk.ViewState(
+                latitude=-23.959,
+                longitude=-46.342,
+                zoom=11,
+                pitch=50,
+            ),
+            layers=[
+                pdk.Layer(
+                    "HexagonLayer",
+                    data=df,
+                    get_position="[lon, lat]",
+                    radius=100,
+                    elevation_scale=2,
+                    elevation_range=[0, 1000],
+                    upperPercentile=99,
+                    pickable=True,
+                    extruded=True,
+                    material=True
+                )
+            ],
+        )
+    )
+
     st.header("Nada por aqui ainda. 🚧") 
