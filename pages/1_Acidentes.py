@@ -3,6 +3,7 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import pydeck as pdk
+import numpy as np
 
 st.set_page_config(page_title="Acidentes", page_icon="🚗", layout='wide',initial_sidebar_state="collapsed")
 st.title("Dados de Acidentes")
@@ -194,7 +195,7 @@ with tabScatter:
 
 with tabHeat:
     linha = st.columns([2,1])
-    with linha[0]:
+    with linha[0]:        
         chart = st.pydeck_chart(
             pdk.Deck(
                 map_style=None,
@@ -231,33 +232,68 @@ with tabHeat:
 
 
 with tabGraphs:
-    colLogs, colCruz = st.columns(2)
+    
+    linha1 = st.columns([2,1]) 
+    linha2 = st.columns([2,1]) 
 
     dflogs = df['logradouro'].value_counts().head(10).reset_index()
     dflogs.columns = ['Logradouro', 'Contagem']
     dflogs = dflogs.sort_values(by='Contagem', ascending=False)
 
-    fig = px.bar(dflogs, x='Contagem', y='Logradouro', orientation='h',
-            title="Top 10 Logradouros com Mais Acidentes")
+    figlog = px.bar(dflogs, x='Contagem', y='Logradouro', orientation='h',
+            title="Logradouros com Mais Acidentes")
 
-    fig.update_layout(xaxis_tickangle=-20) 
-    st.plotly_chart(fig)
+    figlog.update_layout(xaxis_tickangle=-20) 
+    graphLog = linha1[0].plotly_chart(figlog)
+
+    gravidade_counts = df['gravidade'].value_counts().reset_index()
+    gravidade_counts.columns = ['Gravidade', 'Contagem']
+
+    figgrav = px.pie(gravidade_counts,names='Gravidade',values='Contagem', title='Distribuição de Gravidade')
+
+    graphGrav = linha1[1].plotly_chart(figgrav)
 
     df_crossings = df.dropna(subset=['cruzamento'])
 
     df_crossings['logradouro_cruzamento'] = df_crossings['logradouro'] + ' x ' + df_crossings['cruzamento']
-
     df_top_crossings = df_crossings['logradouro_cruzamento'].value_counts().head(10).reset_index()
-    df_top_crossings.columns = ['logradouro_cruzamento', 'contagem']
+    df_top_crossings.columns = ['Cruzamento', 'Contagem']
 
-    fig = px.bar(df_top_crossings, x='contagem', y='logradouro_cruzamento', 
+    figcruz = px.bar(df_top_crossings, x='Contagem', y='Cruzamento', 
                 orientation='h',
-                title="Top 10 Cruzamentos com Mais Acidentes")
+                title="Cruzamentos com Mais Acidentes")
 
-    fig.update_layout(
+    figcruz.update_layout(
         xaxis_title="Contagem de Acidentes",
         yaxis_title="Cruzamento",
         yaxis_tickfont=dict(size=10) 
     )
 
-    st.plotly_chart(fig)
+    linha2[0].plotly_chart(figcruz)
+
+    tempo_counts = df['tempo'].value_counts().reset_index()
+    tempo_counts.columns = ['Tempo', 'Contagem']
+    figtempo = px.pie(tempo_counts,names='Tempo',values='Contagem', title='Condições Climáticas')
+
+    linha2[1].plotly_chart(figtempo)
+
+    df['hora'] = pd.to_datetime(df['data_hora']).dt.floor('30T').dt.time
+    hora_counts = df['hora'].value_counts().reset_index()
+    hora_counts.columns = ['Horário', 'Contagem']
+    hora_counts = hora_counts.sort_values(by='Horário')
+    hora_counts['Horário'] = hora_counts['Horário'].astype(str)
+
+    histogram_fig = px.histogram(hora_counts,
+                                 x='Horário',
+                                 y='Contagem',
+                                 title='Histograma de Contagem de Acidentes por Horário',
+                                 nbins=24
+                                )
+
+    histogram_fig.update_layout(
+        xaxis_title='Horário',
+        yaxis_title='Contagem',
+        xaxis_tickangle=-45,
+        showlegend=True
+    )
+    st.plotly_chart(histogram_fig, use_container_width=True)

@@ -6,3 +6,4 @@ folium
 datetime
 branca
 pydeck
+numpy
