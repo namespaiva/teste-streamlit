@@ -243,7 +243,10 @@ with tabGraphs:
     figlog = px.bar(dflogs, x='Contagem', y='Logradouro', orientation='h',
             title="Logradouros com Mais Acidentes")
 
-    figlog.update_layout(xaxis_tickangle=-20) 
+    figlog.update_layout(
+        xaxis_title="Contagem de Acidentes",
+        yaxis_title="Logradouro",
+        yaxis_tickfont=dict(size=10)) 
     graphLog = linha1[0].plotly_chart(figlog)
 
     gravidade_counts = df['gravidade'].value_counts().reset_index()
@@ -297,3 +300,39 @@ with tabGraphs:
         showlegend=True
     )
     st.plotly_chart(histogram_fig, use_container_width=True)
+
+    linha3 = st.columns([1,1])
+    df['dia'] = pd.to_datetime(df['data_hora']).dt.date
+    df['data_hora'] = pd.to_datetime(df['data_hora'])
+
+    monthly_counts = df.groupby(pd.Grouper(key='data_hora', freq='M')).size().reset_index(name='Contagem')
+    monthly_counts['Mês'] = monthly_counts['data_hora'].astype(str)
+
+    area_fig = px.area(monthly_counts,
+                    x='Mês',
+                    y='Contagem',
+                    title='Contagem de Acidentes por Mês')
+
+    area_fig.update_layout(
+        xaxis_title='Mês',
+        yaxis_title='Contagem',
+        showlegend=True
+    )
+
+    linha3[0].plotly_chart(area_fig, use_container_width=True)
+
+    df['Semana'] = df['data_hora'].dt.to_period('W').apply(lambda r: r.start_time)
+    weekly_counts = df.groupby('Semana').size().reset_index(name='Contagem')
+
+    area_fig = px.area(weekly_counts,
+                    x='Semana',
+                    y='Contagem',
+                    title='Contagem de Acidentes por Semana')
+
+    area_fig.update_layout(
+        xaxis_title='Semana',
+        yaxis_title='Contagem',
+        showlegend=True
+    )
+
+    linha3[1].plotly_chart(area_fig, use_container_width=True)
