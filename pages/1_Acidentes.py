@@ -4,7 +4,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 import pydeck as pdk
 import numpy as np
-
+from datetime import date
 st.set_page_config(page_title="Acidentes", page_icon="🚗", layout='wide',initial_sidebar_state="collapsed")
 st.title("Dados de Acidentes")
 
@@ -27,32 +27,51 @@ def load_data():
 def apply_filters(df, filters):
     for filter_value, column in filters:
         if filter_value: 
-            if column == 'data_hora_year':
+            if column == 'data_hora': 
                 start, finish = filter_value
-                df = df[(df['data_hora'].dt.year >= start) & (df['data_hora'].dt.year <= finish)]
+                df = df[(df['data_hora'] >= start) & (df['data_hora'] <= finish)]
             elif isinstance(filter_value, list):  # Para mais de um valor (multiselect)
                 df = df[df[column].isin(filter_value)]
-            else:  # Para só um valor (multiselect)
+            else:  # Para só um valor (selectbox)
                 df = df[df[column] == filter_value]
     
     return df
 
+# Carrega os dados
 df = load_data()
-filters = []
-
-anos = st.slider(
-    "Escolha um Período",
-    df['data_hora'].dt.year.min(),
-    df['data_hora'].dt.year.max(),
-    (2018,2024) 
-    )
-filters.append((anos, 'data_hora_year'))
-df = apply_filters(df, filters)
 
 # Filtros
 with st.container():
     st.header('Filtros')
     
+    min_date = df['data_hora'].min().date()
+    max_date = df['data_hora'].max().date()
+
+    linhaPeriodo = st.columns([1,1])
+    # Filtro de data inicial
+    start_date = linhaPeriodo[0].date_input(
+        "Escolha a data inicial",
+        format="DD/MM/YYYY",
+        value=date(2018,1,1),
+        min_value=min_date,
+        max_value=max_date
+    )
+
+    # Filtro de data final
+    end_date = linhaPeriodo[1].date_input(
+        "Escolha a data final",
+        format="DD/MM/YYYY",
+        value=max_date,
+        min_value=start_date,
+        max_value=max_date
+    )
+
+    filters = []
+    start_date = pd.to_datetime(start_date)
+    end_date = pd.to_datetime(end_date)
+    filters.append(((start_date, end_date), 'data_hora'))
+    df = apply_filters(df, filters)
+
     #filters.append((ano, 'data_hora'.dt.year))
 
     colGrav, colTipo, colTempo = st.columns(3)
@@ -215,7 +234,7 @@ with tabHeat:
                         auto_highlight=True,
                         elevation_range=[0, 1000],
                         upperPercentile=99,
-                        # lowerPercentile=1,
+                        #lowerPercentile=1,
                         pickable=True,
                         extruded=True,
                         material=True
