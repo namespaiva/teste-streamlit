@@ -40,6 +40,27 @@ def apply_filters(df, filters):
 # Carrega os dados
 df = load_data()
 
+with st.expander('Sobre'):
+    st.markdown('''
+            Dados de acidentes em Santos de 2015 a 2024. A partir de 2018 a quantidade de dados 
+            anuais cai drasticamente, por isso o ano inicial padrão é 2018. 
+
+            Muitos acidentes aconteceram no mesmo endereço/cruzamento, por isso os pontos ficam 
+            sobrepostos no mapa. Recomendo usar (clicar) a legenda do próprio gráfico para ocultar 
+            alguns pontos e ver quais estão acima de quais, ou usar o seletor do mapa.
+
+            A ordem das ruas no cruzamento importa. Rua A x B vai mostrar resultados diferentes de 
+            rua B x A.
+
+            A legenda do mapa oculta os pontos apenas visualmente, ou seja, eles ainda aparecerão
+            na tabela de dados. Para evitar isso, selecione a gravidade desejada no filtro de gravidade. 
+            
+            Os filtros já estão razoavelmente dinâmicos, mas alguns acabam limpando as seleções 
+            anteriores.
+
+            Os dias da semana estão representados em números, de 1, domingo até 7, sábado.
+                ''')
+
 # Filtros
 with st.container():
     st.header('Filtros')
@@ -164,7 +185,7 @@ for gravidade in gravidades:
 
 fig.update_layout(
     mapbox=dict(
-        style="carto-darkmatter",
+        style="open-street-map",
         center=dict(lat=-23.959, lon=-46.342),
         zoom=12
     ),
@@ -217,7 +238,7 @@ with tabHeat:
     with linha[0]:        
         chart = st.pydeck_chart(
             pdk.Deck(
-                map_style=None,
+                map_style='light',
                 initial_view_state=pdk.ViewState(
                     latitude=-23.959,
                     longitude=-46.342,
@@ -248,7 +269,6 @@ with tabHeat:
                         column_order=['data_hora','dia_semana','logradouro','numero',
                                     'cruzamento','tipo_acidente','gravidade','tempo'])
         st.write('Contagem: ', df.shape[0])
-
 
 with tabGraphs:
     

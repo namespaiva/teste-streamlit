@@ -9,12 +9,15 @@ st.markdown("# Sobre")
 st.markdown('''
             ### Aba 1: Dados Sobre Acidentes
 
-            Dados de acidentes em Santos de 2015 a 2024. A partir de 2017 a quantidade de dados 
-            anuais cai drasticamente, por isso o ano inicial padrão é 2017. 
+            Dados de acidentes em Santos de 2015 a 2024. A partir de 2018 a quantidade de dados 
+            anuais cai drasticamente, por isso o ano inicial padrão é 2018. 
 
             Muitos acidentes aconteceram no mesmo endereço/cruzamento, por isso os pontos ficam 
             sobrepostos no mapa. Recomendo usar (clicar) a legenda do próprio gráfico para ocultar 
-            alguns pontos e ver quais estão acima de quais.
+            alguns pontos e ver quais estão acima de quais, ou usar o seletor do mapa.
+
+            A ordem das ruas no cruzamento importa. Rua A x B vai mostrar resultados diferentes de 
+            rua B x A.
 
             A legenda do mapa oculta os pontos apenas visualmente, ou seja, eles ainda aparecerão
             na tabela de dados. Para evitar isso, selecione a gravidade desejada no filtro de gravidade. 
@@ -23,8 +26,6 @@ st.markdown('''
             anteriores.
 
             Os dias da semana estão representados em números, de 1, domingo até 7, sábado.
-            
-            Planos posteriores: adicionar alguns gráficos interativos e um mapa de calor.
 
             ### Abas 2 e 3: Input de dados de operações em um mapa:
 
